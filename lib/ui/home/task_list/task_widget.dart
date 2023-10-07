@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app_todo_c9_fri/firebase_utils.dart';
 import 'package:flutter_app_todo_c9_fri/model/task.dart';
 import 'package:flutter_app_todo_c9_fri/my_theme.dart';
+import 'package:flutter_app_todo_c9_fri/providers/auth_provider.dart';
 import 'package:flutter_app_todo_c9_fri/providers/list_provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
@@ -26,11 +27,12 @@ class TaskWidget extends StatelessWidget {
               ),
               onPressed: (context) {
                 /// delete task
-                FirebaseUtils.deleteTaskFromFireStore(task).timeout(
+                 var authProvider = Provider.of<AuthProvider>(context,listen: false);
+                FirebaseUtils.deleteTaskFromFireStore(task,authProvider.currentUser?.id??'').timeout(
                   Duration(milliseconds: 500),
                   onTimeout: (){
                     print('task was deleted');
-                    listProvider.getAllTasksFromFireStore();
+                    listProvider.getAllTasksFromFireStore(authProvider.currentUser?.id??'');
                   }
                 );
               },

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app_todo_c9_fri/dialog_utils.dart';
 import 'package:flutter_app_todo_c9_fri/firebase_utils.dart';
 import 'package:flutter_app_todo_c9_fri/model/task.dart';
+import 'package:flutter_app_todo_c9_fri/providers/auth_provider.dart';
 import 'package:flutter_app_todo_c9_fri/providers/list_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -122,11 +124,23 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
           description: description,
           dateTime: selectedDate,
       );
-      FirebaseUtils.addTaskToFireStore(task).timeout(
+      var authProvider = Provider.of<AuthProvider>(context,listen: false);
+      DialogUtils.showLoading(context, 'Waiting...');
+      FirebaseUtils.addTaskToFireStore(task,authProvider.currentUser?.id??"")
+      .then((value) {
+        DialogUtils.hideLoading(context);
+        DialogUtils.showMessage(context, 'Task added Sucuessfully',
+          posActionName: 'Ok',
+          posAction: (){
+          Navigator.pop(context);
+          }
+        );
+      })
+          .timeout(
         Duration(milliseconds: 500),
         onTimeout: (){
           print('task added succuessfully');
-          listProvider.getAllTasksFromFireStore();
+          listProvider.getAllTasksFromFireStore(authProvider.currentUser?.id??'');
           Navigator.pop(context);
         }
       )

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app_todo_c9_fri/firebase_utils.dart';
 import 'package:flutter_app_todo_c9_fri/model/task.dart';
 import 'package:flutter_app_todo_c9_fri/my_theme.dart';
+import 'package:flutter_app_todo_c9_fri/providers/auth_provider.dart';
 import 'package:flutter_app_todo_c9_fri/providers/list_provider.dart';
 import 'package:flutter_app_todo_c9_fri/ui/home/task_list/task_widget.dart';
 import 'package:provider/provider.dart';
@@ -18,9 +19,8 @@ class _TaskListWidgetState extends State<TaskListWidget> {
   @override
   Widget build(BuildContext context) {
     var listProvider = Provider.of<ListProvider>(context);
-    if(listProvider.tasksList.isEmpty){
-      listProvider.getAllTasksFromFireStore();
-    }
+    var authProvider = Provider.of<AuthProvider>(context);
+    listProvider.getAllTasksFromFireStore(authProvider.currentUser?.id??"");
     return Column(
       children: [
         CalendarTimeline(
@@ -28,7 +28,7 @@ class _TaskListWidgetState extends State<TaskListWidget> {
           firstDate: DateTime.now().subtract(Duration(days: 365)),
           lastDate: DateTime.now().add(Duration(days: 365)),
           onDateSelected: (date) {
-            listProvider.changeSelectedDate(date);
+            listProvider.changeSelectedDate(date,authProvider.currentUser?.id??'');
           },
           leftMargin: 20,
           monthColor: MyTheme.blackColor,

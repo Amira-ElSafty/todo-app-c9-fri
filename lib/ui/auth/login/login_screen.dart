@@ -1,13 +1,28 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app_todo_c9_fri/components/custom_text_form_field.dart';
+import 'package:flutter_app_todo_c9_fri/dialog_utils.dart';
+import 'package:flutter_app_todo_c9_fri/firebase_utils.dart';
+import 'package:flutter_app_todo_c9_fri/providers/auth_provider.dart';
 import 'package:flutter_app_todo_c9_fri/ui/auth/login/login_screen.dart';
 import 'package:flutter_app_todo_c9_fri/ui/auth/register/register_screen.dart';
+import 'package:flutter_app_todo_c9_fri/ui/home/home_screen.dart';
+import 'package:provider/provider.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   static const String routeName = 'login';
-  var emailController = TextEditingController();
-  var passwordController = TextEditingController();
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  var emailController = TextEditingController(text: 'amira@route.com');
+
+  var passwordController = TextEditingController(text: '123456');
+
   var formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,72 +40,74 @@ class LoginScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: MediaQuery.of(context).size.height * 0.4),
-                  CustomTextFormField(label: 'Email Address',
+                  CustomTextFormField(
+                    label: 'Email Address',
                     keyboardType: TextInputType.emailAddress,
-                      controller: emailController,
-                    validator: (text){
-                      if(text == null || text.trim().isEmpty){
+                    controller: emailController,
+                    validator: (text) {
+                      if (text == null || text.trim().isEmpty) {
                         return 'Please enter email address';
                       }
-                      bool emailValid =
-                      RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                      bool emailValid = RegExp(
+                              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
                           .hasMatch(text);
-                      if(!emailValid){
+                      if (!emailValid) {
                         return 'Please enter a valid email';
                       }
-                      return null ;
+                      return null;
                     },
                   ),
-                  CustomTextFormField(label: 'Password',
+                  CustomTextFormField(
+                    label: 'Password',
                     keyboardType: TextInputType.number,
-                      controller: passwordController,
+                    controller: passwordController,
                     isPassword: true,
-                    validator: (text){
-                      if(text == null || text.trim().isEmpty){
+                    validator: (text) {
+                      if (text == null || text.trim().isEmpty) {
                         return 'Please enter Password';
                       }
-                      if(text.length < 6){
+                      if (text.length < 6) {
                         return 'Password should be at least 6 chars';
                       }
-                      return null ;
+                      return null;
                     },
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12)
-                      ),
-                        onPressed: (){
-                      login();
-                    }, child: Text('Login',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    )
-                    ),
+                        style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 12)),
+                        onPressed: () {
+                          login();
+                        },
+                        child: Text(
+                          'Login',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        )),
                   ),
                   Row(
                     children: [
-                      SizedBox(width: MediaQuery.of(context).size.width*0.2,),
-                      Text("Don't have an account?",
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400
-                        ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.2,
                       ),
-                      TextButton(onPressed: (){
-                        /// navigate to login
-                        Navigator.of(context).pushNamed(RegisterScreen.routeName);
-                      }, child: Text('SignUp',
+                      Text(
+                        "Don't have an account?",
                         style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold
-                        ),
-
-                      ))
-
+                            fontSize: 15, fontWeight: FontWeight.w400),
+                      ),
+                      TextButton(
+                          onPressed: () {
+                            /// navigate to login
+                            Navigator.of(context)
+                                .pushNamed(RegisterScreen.routeName);
+                          },
+                          child: Text(
+                            'SignUp',
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.bold),
+                          ))
                     ],
                   ),
-
                 ],
               ),
             ),
@@ -100,9 +117,53 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  void login() {
-    if(formKey.currentState?.validate()== true){
+  void login() async {
+    if (formKey.currentState?.validate() == true) {
       /// register
+      DialogUtils.showLoading(context, 'Loading...');
+      try {
+        final credential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+                email: emailController.text, password: passwordController.text);
+        var user = await FirebaseUtils.readUserFromFireStore(credential.user?.uid??"");
+        if(user == null){
+          return ;
+        }
+        var authProvider = Provider.of<AuthProvider>(context,listen: false);
+        authProvider.updateUser(user);
+        //todo: hide loading
+        DialogUtils.hideLoading(context);
+        //todo: show message
+        DialogUtils.showMessage(context, 'Login Sucuessfully',
+            title: 'Success', posActionName: 'OK', barrierDismissible: false,
+          posAction: (){
+          Navigator.pushReplacementNamed(context, HomeScreen.routeName);
+          }
+        );
+        print('login sucuessfully');
+        print(credential.user?.uid ?? "");
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'user-not-found') {
+          print('No user found for that email.');
+        } else if (e.code == 'wrong-password') {
+          print('Wrong password provided for that user.');
+        } else if (e.code == 'INVALID_LOGIN_CREDENTIALS') {
+          //todo: hide loading
+          DialogUtils.hideLoading(context);
+          //todo: show message
+          DialogUtils.showMessage(
+              context, 'wrong password or no user found for that email',
+              title: 'Error', posActionName: 'OK', barrierDismissible: false);
+          print('wrong password or no user found for that email');
+        }
+      } catch (e) {
+        //todo: hide loading
+        DialogUtils.hideLoading(context);
+        //todo: show message
+        DialogUtils.showMessage(context, e.toString(),
+            title: 'Error', posActionName: 'OK', barrierDismissible: false);
+        print(e);
+      }
     }
   }
 }
