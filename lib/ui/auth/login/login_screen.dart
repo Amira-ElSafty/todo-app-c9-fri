@@ -140,21 +140,14 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, HomeScreen.routeName);
           }
         );
-        print('login sucuessfully');
-        print(credential.user?.uid ?? "");
       } on FirebaseAuthException catch (e) {
-        if (e.code == 'user-not-found') {
-          print('No user found for that email.');
-        } else if (e.code == 'wrong-password') {
-          print('Wrong password provided for that user.');
-        } else if (e.code == 'INVALID_LOGIN_CREDENTIALS') {
+        if (e.code == 'INVALID_LOGIN_CREDENTIALS') {
           //todo: hide loading
           DialogUtils.hideLoading(context);
           //todo: show message
-          DialogUtils.showMessage(
-              context, 'wrong password or no user found for that email',
-              title: 'Error', posActionName: 'OK', barrierDismissible: false);
-          print('wrong password or no user found for that email');
+          DialogUtils.showMessage(context, 'No user found for that email or Wrong password provided for that user',
+              title: 'Error', posActionName: 'OK', barrierDismissible: false,
+          );
         }
       } catch (e) {
         //todo: hide loading
@@ -162,7 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
         //todo: show message
         DialogUtils.showMessage(context, e.toString(),
             title: 'Error', posActionName: 'OK', barrierDismissible: false);
-        print(e);
       }
     }
   }

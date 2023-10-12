@@ -159,8 +159,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Navigator.pushReplacementNamed(context, HomeScreen.routeName);
             }
         );
-        print('register sucuessfully');
-        print(credential.user?.uid??'');
       } on FirebaseAuthException catch (e) {
         if (e.code == 'weak-password') {
           //todo: hide loading
@@ -171,7 +169,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               posActionName: 'OK',
             barrierDismissible: false
           );
-          print('The password provided is too weak.');
         } else if (e.code == 'email-already-in-use') {
           //todo: hide loading
           DialogUtils.hideLoading(context);
@@ -180,9 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               title: 'Error',
               posActionName: 'OK',
               barrierDismissible: false
-
           );
-          print('The account already exists for that email.');
         }
       } catch (e) {
         //todo: hide loading
@@ -192,11 +187,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             title: 'Error',
             posActionName: 'OK',
             barrierDismissible: false
-
         );
-        print(e);
       }
-
     }
   }
 }
